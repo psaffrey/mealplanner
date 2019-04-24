@@ -61,6 +61,9 @@ var weekdays = [
 function retrieve_meal_options() {
   // get from local storage
   mealoptions = JSON.parse(localStorage.getItem('mealoptions'))
+  if(mealoptions === null) {
+    mealoptions = []
+  }
 }
 
 function get_random(min, max) {
