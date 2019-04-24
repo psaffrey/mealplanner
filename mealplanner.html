@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Meal Planner</title>
+  </head>
+  <body>
+    <h1>Meal Planner</h1>
+    <div class="wrapper container">
+      <div class="row">
+        <div class="col-md-4"> 
+          <h2>Meal Planner</h2>
+          <div id="mealtable">
+          </div>
+        </div>
+
+        <div class="col-md-auto">
+          <span class="align-middle">
+            <button type="button" class="btn btn-primary" id="populate-button">&larr; Populate</button>
+          </span>
+        </div>
+
+        <div class="col-md-auto"> 
+          <h2>Meal Options</h2>
+          <div id="optiontable">
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>
+
+var choice_id = "mealtable";
+
+//var mealoptions = [ "Jacket Potatoes", "Burgers", "Sausage and mash", "Jar curry", "Flat breads", "Pasta and sauce", "Beans on toast" ];
+
+var mealoptions = [];
+
+// I can't believe Javascript is this primitive :(
+var weekdays = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday"
+]
+
+function retrieve_meal_options() {
+  // get from local storage
+  mealoptions = JSON.parse(localStorage.getItem('mealoptions'))
+}
+
+function get_random(min, max) {
+  // get between min and max (inclusive?)
+  return Math.floor(Math.random() * (+max+1 - +min)) + +min;
+}
+
+function shuffle(a) {
+    var j, x, i;
+    for (i = a.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        x = a[i];
+        a[i] = a[j];
+        a[j] = x;
+    }
+    return a;
+}
+
+function randomize_choices() {
+  choices = [["Day", "Meal"]]
+  // https://www.samanthaming.com/tidbits/35-es6-way-to-clone-an-array
+  checked_options = get_options()
+  alloptions = shuffle([...checked_options])
+  for (var i = 0; i < weekdays.length; i++) {
+    day = weekdays[i]
+    choice = alloptions.pop()
+    choices.push([ day, choice ])
+  }
+  return choices;
+}
+
+function set_choice_table(container, data) {
+  container.empty()
+  var table = $("<table/>").addClass("table table-striped table-bordered table-hover");
+  $.each(data, function(rowIndex, r) {
+      if(rowIndex == 0) {
+        outerrow = $("<thead/>").addClass("thead-light")
+        innerrow = $("<tr/>")
+        outerrow.append(innerrow)
+      } else if(rowIndex == 1) {
+        outerrow = $("<tbody/>")
+        innerrow = $("<tr/>")
+        outerrow.append(innerrow)
+      } else {
+        outerrow = $("<tr/>")
+        innerrow = outerrow
+      }
+      $.each(r, function(colIndex, c) { 
+          innerrow.append($("<t"+(rowIndex == 0 ?  "h" : "d")+"/>").text(c));
+      });
+      table.append(outerrow);
+  });
+  return container.append(table);
+}
+
+function _get_add_option_row() {
+  var append_row = `<div class="input-group mb-3">
+  <input type="text" class="form-control" placeholder="Meal" aria-label="Recipient's username" aria-describedby="basic-addon2">
+  <div class="input-group-append">
+    <button class="btn btn-outline-secondary" type="button" id="add-meal-button">Add meal choice</button>
+  </div>
+</div>`
+  return append_row
+}
+
+function get_options() {
+  all_options = []
+  $.each($("input[name='options']:checked"), function() { all_options.push($(this).text()) } )
+  return all_options
+}
+
+function list_to_object(inlist) { 
+  my_object = {}
+  $.each(inlist, function(rowIndex, r) {
+    my_object[r] = 1
+  }) 
+  return my_object
+}
+
+function get_checked_options_lookup() {
+  checked_options_list = get_options()
+  return list_to_object(checked_options_list)
+}
+
+
+function render_option_table(container, optionlist, checked_options) {
+  container.empty()
+  form = $("<form/>")
+  $.each(optionlist, function(rowIndex, r) {
+    inputdiv = $("<div/>").addClass("form-check")
+    inputbox = $("<input/>").attr("type", "checkbox").attr("name", "options").addClass("form-check-input").text(r)
+    if(r in checked_options) { inputbox.attr("checked", ""); }
+    inputlabel = $("<label/>").text(r).addClass("form-check-label")
+    inputdiv.append(inputbox)
+    inputdiv.append(inputlabel)
+    form.append(inputdiv);
+  })
+  container.append(form);
+  option_row = container.append(_get_add_option_row())
+  $("#add-meal-button").bind("click", function(event) {
+    meal_text = $("input", event.target.parentElement.parentElement).val()
+    if (meal_text != "") {
+      add_option(meal_text);
+    }
+  })
+  return option_row
+}
+
+function render_option_table_old(container, optionlist) {  
+  container.empty()
+  var table = $("<table/>").addClass("table table-striped table-bordered table-hover");
+  header = $("<thead/>").append($("<th/>").text("Option"))
+    .append($("<th/>").text("Available"))
+    .addClass("thead-light")
+  body = $("<tbody/>").attr("id", "choice-table-body")
+  table.append(header)
+  table.append(body)
+  $.each(optionlist, function(rowIndex, r) {
+      row = $("<tr/>")
+      row.append($("<td/>").text(r))
+      inputbox = $("<input/>").attr("type", "checkbox").attr("name", r).attr("checked", "").addClass("option-checkbox")
+      row.append(inputbox)
+      body.append(row)
+  });
+  container.append(table);
+  return container.append(_get_add_option_row())
+}
+
+function populate_random() {
+  choices = randomize_choices()
+  set_choice_table($("#mealtable"), choices)
+}
+
+function add_option(new_option) {
+  mealoptions.push(new_option)
+  check_options_lookup = get_checked_options_lookup()
+  check_options_lookup[new_option] = 1
+  localStorage.setItem('mealoptions', JSON.stringify(mealoptions))
+  render_option_table($("#optiontable"), mealoptions, check_options_lookup)
+}
+
+$( document ).ready(function() {
+  retrieve_meal_options()
+  render_option_table($("#optiontable"), mealoptions, list_to_object(mealoptions))
+  $("#populate-button").bind("click", populate_random)
+});
+</script>
+  </body>
+
+
+</html>
