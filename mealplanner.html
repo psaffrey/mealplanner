@@ -83,16 +83,25 @@ function shuffle(a) {
 }
 
 function randomize_choices() {
-  choices = [["Day", "Meal"]]
+  choices = []
   // https://www.samanthaming.com/tidbits/35-es6-way-to-clone-an-array
   checked_options = get_options()
   alloptions = shuffle([...checked_options])
   for (var i = 0; i < weekdays.length; i++) {
-    day = weekdays[i]
     choice = alloptions.pop()
-    choices.push([ day, choice ])
+    choices.push(choice )
   }
   return choices;
+}
+
+function pack_choices(choices) {
+  packed_choices = [["Day", "Meal", ""]]
+  for (var i = 0; i < weekdays.length; i++) {
+    day = weekdays[i]
+    choice = choices[i]
+    packed_choices.push([ day, choice ])
+  }
+  return packed_choices;
 }
 
 function set_choice_table(container, data) {
@@ -114,14 +123,38 @@ function set_choice_table(container, data) {
       $.each(r, function(colIndex, c) { 
           innerrow.append($("<t"+(rowIndex == 0 ?  "h" : "d")+"/>").text(c));
       });
+      if(rowIndex > 0) {
+        innerrow.append($('<td width="100px"><button type="button" class="btn-primary up">&#9650</button><button type="button" class="btn-primary down">&#9660</button></td>'))
+      }
       table.append(outerrow);
   });
-  return container.append(table);
+  appended = container.append(table);
+  $(".up,.down").click(function() {
+    var row = $(this).parents("tr:first");
+    index = $(row).index()
+    if ($(this).is(".up")) {
+      if(index>0) {
+        swap = choices[index]
+        choices[index] = choices[index-1]
+        choices[index-1] = swap
+      }
+    } else {
+      if(index<choices.length-1){
+        swap = choices[index]
+        choices[index] = choices[index+1]
+        choices[index+1] = swap        
+      }
+    }
+    packed_choices = pack_choices(choices)
+    set_choice_table($("#mealtable"), packed_choices)
+
+  });
+  return appended
 }
 
 function _get_add_option_row() {
   var append_row = `<div class="input-group mb-3">
-  <input type="text" class="form-control" placeholder="Meal" aria-label="Recipient's username" aria-describedby="basic-addon2">
+  <input type="text" id="add-meal-textbox" class="form-control" placeholder="Meal" aria-describedby="basic-addon2">
   <div class="input-group-append">
     <button class="btn btn-outline-secondary" type="button" id="add-meal-button">Add meal choice</button>
   </div>
@@ -168,33 +201,26 @@ function render_option_table(container, optionlist, checked_options) {
     if (meal_text != "") {
       add_option(meal_text);
     }
+  });
+  $('#add-meal-textbox').keypress(function(e) { 
+    if(e.keycode == 13) {
+      meal_text = $("input", $(event.target).val())
+      if (meal_text != "") {
+        add_option(meal_text);
+      }     
+    }
   })
   return option_row
 }
 
-function render_option_table_old(container, optionlist) {  
-  container.empty()
-  var table = $("<table/>").addClass("table table-striped table-bordered table-hover");
-  header = $("<thead/>").append($("<th/>").text("Option"))
-    .append($("<th/>").text("Available"))
-    .addClass("thead-light")
-  body = $("<tbody/>").attr("id", "choice-table-body")
-  table.append(header)
-  table.append(body)
-  $.each(optionlist, function(rowIndex, r) {
-      row = $("<tr/>")
-      row.append($("<td/>").text(r))
-      inputbox = $("<input/>").attr("type", "checkbox").attr("name", r).attr("checked", "").addClass("option-checkbox")
-      row.append(inputbox)
-      body.append(row)
-  });
-  container.append(table);
-  return container.append(_get_add_option_row())
-}
-
 function populate_random() {
+  if(mealoptions.length < 7) { 
+    alert("not enough options!"); 
+    return; 
+  }
   choices = randomize_choices()
-  set_choice_table($("#mealtable"), choices)
+  packed_choices = pack_choices(choices)
+  set_choice_table($("#mealtable"), packed_choices)
 }
 
 function add_option(new_option) {
