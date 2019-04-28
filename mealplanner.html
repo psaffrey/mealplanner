@@ -203,8 +203,8 @@ function render_option_table(container, optionlist, checked_options) {
     }
   });
   $('#add-meal-textbox').keypress(function(e) { 
-    if(e.keycode == 13) {
-      meal_text = $("input", $(event.target).val())
+    if(e.keyCode == 13) {
+      meal_text = $(e.target).val()
       if (meal_text != "") {
         add_option(meal_text);
       }     
